@@ -1,0 +1,5 @@
+project:
+  name: Hermans-Enterprise-Resource-Planning
+  tz: Africa/Abidjan
+  adrFolder: ./docs/architecture/adrs
+  packages: []

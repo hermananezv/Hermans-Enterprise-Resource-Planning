@@ -1,2 +1,1 @@
-# Hermans-Enterprise-Resource-Planning
-Hermans-Enterprise-Resource-Planning
+# Enterprise-Resource-Planning
