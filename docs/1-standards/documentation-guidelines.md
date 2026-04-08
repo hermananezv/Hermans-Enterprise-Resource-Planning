@@ -25,7 +25,7 @@ docs/modules/[bounded-context]/
 ├── requirements.md
 ├── domain-model.md
 ├── api-spec.md
-├── endpoint/
+├── endpoints/
 │   └──[endpoint-name].md
 ├── use-cases/
 │   └── uc-[id]-[nombre].md

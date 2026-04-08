@@ -20,11 +20,6 @@ Identificador|account_id (UUID)|employee_number (Legajo)
 Lenguaje Ubicuo|Login, Token, Grant, Claim.|Onboarding, Vacaciones, Ascenso.
 
 
-
-
-
-
-
 ---------------
 #  Notifications
 
@@ -145,3 +140,19 @@ Las reglas que el Agregado `User` debe proteger en todo momento:
 2. Un `User` recién creado debe estar en estado "Pendiente de Activación" hasta que verifique su correo.
 3. Un `User` debe tener al menos un `Role` asignado para poder generar un `Token` válido.
 4. Las contraseñas (`PasswordHash`) deben cumplir con políticas de complejidad antes de ser aceptadas.
+
+
+-----------
+
+
+Resumen de los beneficios obtenidos con estos cambios en tu documentación:
+
+    No perderás eventos: Gracias al Transactional Outbox.
+
+    No enviarás correos dobles: Gracias a la Idempotencia.
+
+    No saturarás hilos en caídas externas: Gracias al Circuit Breaker.
+
+    Tus HR Managers no chocarán al editar: Gracias al Optimistic Locking.
+
+    Tu base de datos escalará mejor: Gracias a CQRS Ligero.

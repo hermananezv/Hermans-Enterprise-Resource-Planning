@@ -14,12 +14,12 @@
 1. El Admin envía una petición `POST` a `/users` con el `email`, `nombres` y la lista de `roles` a asignar.
 2. El sistema valida que el token del Admin tenga los permisos necesarios.
 3. El sistema verifica en la base de datos que el `EmailAddress` no esté registrado previamente.
-4. El sistema genera una contraseña temporal segura (o un token de activación).
-5. El sistema aplica un cifrado (hash) a la contraseña temporal y la asocia al nuevo `User`.
-6. El sistema crea el `User` con el estado `Pending_Activation`.
-7. El sistema guarda la entidad en la base de datos.
+4. **El sistema genera un Token de Activación seguro, único y con fecha de caducidad (ej. 48 horas).**
+5. **El sistema asocia este Token de Activación al nuevo `User` y establece su estado en `Pending_Activation`.**
+6. **[Transactional Outbox]:** En la misma transacción de base de datos, el sistema guarda la entidad `User` y registra el evento `UserCreatedIntegrationEvent` en la tabla `OutboxMessages`.
+7. La transacción de base de datos hace *commit*.
 8. El sistema responde con un `201 Created` y el ID del nuevo usuario.
-9. **Trigger:** El sistema emite el evento `UserCreated`.
+9. **Trigger:** Un proceso en segundo plano (Relay/Worker) lee la tabla Outbox y publica el evento `UserCreatedIntegrationEvent` en el Message Broker de forma segura.
 
 ### 3. Flujos Alternativos / Excepciones
 

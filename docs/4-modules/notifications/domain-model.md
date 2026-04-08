@@ -28,12 +28,15 @@
 - `NotificationSent`
 - `NotificationFailed`
 
-## ⚙️ 3. Reglas de Negocio (Invariantes)
+## ⚙️ 3. Reglas de Negocio (Invariantes y Resiliencia)
 
-1. Toda `Notification` debe estar asociada a una `Template` existente.
-2. Máximo 3 reintentos automáticos por fallo técnico.
-3. No se permite reenviar notificaciones ya entregadas exitosamente.
-4. Se debe registrar siempre el resultado para trazabilidad y auditoría.
+1. **Plantilla Requerida:** Toda `Notification` debe estar asociada a una `Template` existente.
+2. **Idempotencia:** Los consumidores de eventos (ej. escuchar `UserCreatedIntegrationEvent`) deben verificar si el ID del evento ya fue procesado antes de enviar la notificación. Si ya existe, se ignora (evita correos duplicados).
+3. **Reintentos y Circuit Breaker:**
+   - Se realizarán máximo 3 reintentos automáticos (con *Exponential Backoff*) si el proveedor (SendGrid/SES) falla.
+   - Se aplicará el patrón **Circuit Breaker** a nivel de Provider: si la tasa de fallos supera el umbral, el circuito se abre y las peticiones fallan rápido para evitar saturación de recursos.
+4. **Dead Letter Queue (DLQ):** Las notificaciones que fallen de forma definitiva tras agotar los reintentos se moverán a una DLQ para análisis o reprocesamiento manual.
+5. **Auditoría:** Se debe registrar siempre el estado (`DeliveryStatus`) para trazabilidad total.
 
 ## 🔗 Integración con Otros Contextos
 - **Suscrive a:** `UserCreatedIntegrationEvent`, `EmployeeOnboarded`, etc.

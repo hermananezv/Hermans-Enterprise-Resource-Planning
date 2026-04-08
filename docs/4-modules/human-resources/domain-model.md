@@ -20,6 +20,7 @@ Términos de negocio estrictos para este contexto:
 
 ### Agregados y Raíces de Agregado (Aggregate Roots)
 * **`Employee` (Aggregate Root):** Es la entidad central. Toda modificación sobre el estado laboral de la persona, sus datos personales o la firma de un nuevo contrato debe pasar por aquí para garantizar la coherencia legal.
+  * *Manejo de Concurrencia (Optimistic Locking):* Posee un atributo `Version` (entero o UUID temporal). Al intentar guardar cambios concurrentes, si la versión en la base de datos difiere de la cargada en memoria, se lanza una `OptimisticConcurrencyException` para prevenir superposición de contratos o estados inconsistentes.
 * **`Department` (Aggregate Root):** Gestiona su propio ciclo de vida y presupuesto. Un departamento existe independientemente de si tiene empleados asignados o no en un momento dado.
 
 ### Entidades Locales (Entities)

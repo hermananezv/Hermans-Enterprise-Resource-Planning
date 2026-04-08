@@ -34,4 +34,7 @@ Gestionar onboarding, contratos, compensaciones, organigrama y offboarding de lo
 - [API Specification](./api-spec.md)
 - [Use Cases](./use-cases/)
 
+## 🔍 4. Modelo de Lectura (CQRS Ligero)
+Para evitar penalizaciones de rendimiento al consultar organigramas completos o listados de empleados con datos agregados, **no se utilizarán los Aggregate Roots para consultas de solo lectura**. Se implementará un enfoque CQRS ligero utilizando Dapper o Vistas de Base de Datos para retornar DTOs aplanados directamente, esquivando la carga del modelo de dominio.
+
 [back](../../readme.md)
