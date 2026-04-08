@@ -8,6 +8,6 @@ Un núcleo escalable, mantenible y altamente desacoplado para la gestión integr
 
 | Módulo                    | Responsabilidad Principal                              | Estado     |
 |---------------------------|--------------------------------------------------------|------------|
-| [**Identity & Access (IAM)**](./3-modules/identity-and-access/readme.md)  | Autenticación, autorización (RBAC) y gestión de identidades | ✅ Maduro |
-|[**Human Resources (HR)**](./3-modules/human-resources/readme.md)| Ciclo de vida del empleado, contratos y estructura organizacional | ✅ Avanzado|
-|[**Notifications** ](./3-modules/notifications/readme.md)|Envío confiable de correos, SMS y notificaciones | 🟡 En progreso |
+| [**Identity & Access (IAM)**](./4-modules/identity-and-access/readme.md)  | Autenticación, autorización (RBAC) y gestión de identidades | ✅ Maduro |
+|[**Human Resources (HR)**](./4-modules/human-resources/readme.md)| Ciclo de vida del empleado, contratos y estructura organizacional | ✅ Avanzado|
+|[**Notifications** ](./4-modules/notifications/readme.md)|Envío confiable de correos, SMS y notificaciones | 🟡 En progreso |
