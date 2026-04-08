@@ -25,6 +25,8 @@ docs/modules/[bounded-context]/
 ├── requirements.md
 ├── domain-model.md
 ├── api-spec.md
+├── endpoint/
+│   └──[endpoint-name].md
 ├── use-cases/
 │   └── uc-[id]-[nombre].md
 ├── integration-events.md (si aplica)
@@ -32,3 +34,4 @@ docs/modules/[bounded-context]/
 │   ├── c4-model/
 │   └── quality-attributes.md
 └── infrastructure.md
+```
