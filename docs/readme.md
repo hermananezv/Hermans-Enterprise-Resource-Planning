@@ -27,48 +27,4 @@ Este proyecto utiliza DDD para separar las preocupaciones técnicas de las regla
 * Tactical Design: Uso de Entidades, Objetos de Valor (Value Objects), Agregados y Repositorios.
 
 * Comunicación Asíncrona: Integración entre módulos basada en Eventos de Dominio.
-
-## Módulos Actuales
-
-1. Identity & Access (IAM)
-
-Encargado de la identidad técnica y el control de acceso.
-
-* Entidades Clave: User, Role, Permission.
-
-* Responsabilidades: Autenticación (JWT), Gestión de RBAC (Role-Based Access Control) y Auditoría de accesos.
-
-2. Human Resources (HR)
-
-Encargado del empleado como entidad de negocio y su relación laboral.
-
-* Entidades Clave: Employee, Contract, Department.
-
-* Responsabilidades: Onboarding de personal, gestión de contratos, organigrama y ausencias.
-
-🗺️ Mapa de Contextos (Context Map)
-
-Para mantener la integridad del sistema, los módulos se comunican mediante eventos.
-
-Ejemplo de flujo de integración:
-
-* HR registra un nuevo Employee.
-
-* Se dispara un evento de dominio EmployeeOnboarded.
-
-* IAM reacciona a este evento creando un User con los permisos base.
-
-```mermaid
-flowchart LR
-    HR[Human Resources] -->|EmployeeOnboarded| IAM[Identity & Access]
-    IAM -->|UserCreatedIntegrationEvent| Notifications[Notifications]
-    HR -->|ContractCreated<br>AbsenceRegistered| Notifications
-    IAM -->|UserAccountLocked| Notifications
-```
-
-Flujo típico de onboarding:
-
-HR registra un nuevo Employee
-Se publica EmployeeOnboarded
-IAM crea el User y envía UserCreatedIntegrationEvent
-Notifications envía el correo de bienvenida con token de activación
+   

@@ -6,13 +6,12 @@
 
 ## 📖 1. Lenguaje Ubicuo
 
-| Término| Definición| Ejemplo|
-|--------|---------|---------|
-| .......| ........| ........|
+| Término| Definición                        | Ejemplo                 |
+|--------|-----------------------------------|-------------------------|
 |Employee|Persona con relación laboral formal|Juan Pérez (Legajo 45823)|
 
 ## 🏗️ 2. Diseño Táctico (Tactical DDD)
-
+    
 ### Aggregate Roots
 - **`NombreAgregado`** – Descripción breve + invariantes principales.
 
