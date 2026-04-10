@@ -1,14 +1,14 @@
 # Separación de Identidad (User) y Dominio Laboral (Employee)
 
-    Estatus: Propuesto
+Estatus: Accepted
 
-    Fecha: 2026-04-09
+Fecha: 2026-04-09
 
-    Decisor: Arquitecto de Software (Tú)
+Decisor: Arquitecto de Software (Tú)
 
-    Contexto Técnico: ERP Core / Módulos IAM y RRHH
+Contexto Técnico: ERP Core / Módulos IAM y RRHH
 
-Contexto y Problema
+## Contexto y Problema
 
 En el desarrollo del ERP, existe una confusión común entre la persona como "sujeto que accede al sistema" y la persona como "recurso laboral de la empresa".
 
@@ -23,6 +23,7 @@ Si unificamos ambas entidades en una sola tabla/modelo:
 Decisión
 
 Separar formalmente las entidades en dos Bounded Contexts distintos con persistencia independiente.
+
 1. Definición de Identidad (Contexto IAM)
 
 - Entidad: User
@@ -33,7 +34,7 @@ Separar formalmente las entidades en dos Bounded Contexts distintos con persiste
 
 - Referencia: Contendrá un campo external_id que apunta al EmployeeId (si aplica).
 
-2. Definición de Dominio Laboral (Contexto HR)
+1. Definición de Dominio Laboral (Contexto HR)
 
 - Entidad: Employee
 
@@ -43,7 +44,7 @@ Separar formalmente las entidades en dos Bounded Contexts distintos con persiste
 
 - Referencia: No conoce la existencia de contraseñas ni roles de sistema.
 
-3. Mecanismo de Sincronización
+1. Mecanismo de Sincronización
 
 La comunicación se realizará mediante Eventos de Dominio (Coreografía):
 
@@ -97,13 +98,3 @@ package "HR Context" {
 Employee ..> User : "1:0..1 (vía Eventos)"
 @enduml
 ```
-
-Sugerencia para tu documentación (ADR):
-
-Deberías crear un ADR titulado: "Data Sovereignty: Database per Bounded Context".
-
-* Contexto: Necesitamos escalar IAM y RRHH de forma independiente y garantizar la seguridad de los datos sensibles de nómina.
-
-* Decisión: Cada contexto tendrá su propio esquema de persistencia.
-
-* Consecuencia: Tendremos que gestionar la consistencia eventual y no podremos realizar JOINs entre dominios a nivel de base de datos (se hará composición en el API Gateway o en el Frontend).

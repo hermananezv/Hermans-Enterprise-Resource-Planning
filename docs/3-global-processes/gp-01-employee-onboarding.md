@@ -20,21 +20,13 @@ Este proceso de negocio describe el ciclo de vida completo desde que un candidat
 * **Acción:** El Gestor registra los datos personales y el contrato en el módulo HR.
 * **Resultado:** Se guarda el empleado y se publica el evento de integración `EmployeeHiredIntegrationEvent`.
 
-### Paso 2: Aprovisionamiento de Identidad (Programado)
-
-* **Actor:** Sistema (Automático).
-* **Módulo Implicado:** IAM.
-* **Caso de Uso Extraído:** `UC-IAM-00: Aprovisionar Cuenta Automáticamente`.
-* **Acción:** IAM escucha el `EmployeeHiredIntegrationEvent`. Si el contrato del empleado empieza en el futuro, IAM crea el `User` en estado `Scheduled_For_Activation` y entra en espera.
-* **Resultado:** El sistema queda programado de forma segura. El día exacto en que inicia el contrato del empleado, IAM automáticamente cambia el estado a `Pending_Activation` y dispara el evento para enviar el correo.
-
 ### Paso 2: Aprovisionamiento de Identidad (Programado y Diferido)
 
 * **Actor:** Sistema (Automático).
 * **Módulo Implicado:** IAM.
 * **Casos de Uso Extraídos:
   * * `UC-IAM-00: Aprovisionar Cuenta Automáticamente` (Reacción inmediata al evento de RRHH).
-  * * `UC-IAM-07: Procesar Activaciones Programadas` (Tarea programada / Cron Job que libera el acceso).
+  * * `UC-IAM-07: Procesar Activaciones Programadas` (Tarea programada ej. Delayed Exchanges en RabbitMQ o Scheduled Messages en Service Bus).
 * **Acción:** IAM escucha el `EmployeeHiredIntegrationEvent`. Si el contrato del empleado empieza en el futuro, IAM crea el `User` mediante el `UC-IAM-00` dejándolo en estado `Scheduled_For_Activation` y entra en espera.
 * **Resultado:** El sistema queda programado de forma segura. El día exacto en que inicia el contrato, el `UC-IAM-07` automáticamente cambia el estado a `Pending_Activation` y dispara el evento para enviar el correo de bienvenida.
 

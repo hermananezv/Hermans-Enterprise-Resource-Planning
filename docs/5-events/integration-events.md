@@ -33,7 +33,7 @@ Emitido cuando un administrador da de alta a un nuevo usuario en el sistema. Est
   "data": {
     "userId": "usr_987654321",
     "email": "nuevo.empleado@tu-erp.com",
-    "activationToken": "abc123xyz890",
+    "activationToken": "abc123xyz890", //Se debe eliminar esto
     "assignedRoles": ["USER"]
   }
 }
@@ -126,12 +126,12 @@ Con esto, si el desarrollador encargado de programar el módulo de `notification
 
 Para mantener nuestro avance, ¿qué pieza del rompecabezas te gustaría encajar a continuación: definir las especificaciones de la API de IAM (`api-spec.md`) para el Frontend, o iniciar el diseño táctico del Modelo de Dominio (`domain-model.md`) para el módulo de Recursos Humanos?
 
-
 -----.
+
 ### ¿Qué ganamos con esto?
 
-1.  **CorrelationID Obligatorio:** Fíjate que ahora ambos eventos exigen el `correlationId`. Sin esto, HR recibiría un error pero no sabría a qué empleado de su base de datos aplicarle el "rollback".
-2.  **reasonCode:** En lugar de mandar solo un texto libre, mandamos un código (`DUPLICATE_EMAIL`). Esto permite que el Frontend de RRHH muestre un mensaje traducido o un icono específico, en lugar de solo imprimir un error crudo del servidor.
-3.  **isRecoverable:** Este campo le dice a RRHH si vale la pena intentar re-enviar el evento o si es un error fatal que requiere intervención humana (como un error de sintaxis en el nombre).
+1. **CorrelationID Obligatorio:** Fíjate que ahora ambos eventos exigen el `correlationId`. Sin esto, HR recibiría un error pero no sabría a qué empleado de su base de datos aplicarle el "rollback".
+2. **reasonCode:** En lugar de mandar solo un texto libre, mandamos un código (`DUPLICATE_EMAIL`). Esto permite que el Frontend de RRHH muestre un mensaje traducido o un icono específico, en lugar de solo imprimir un error crudo del servidor.
+3. **isRecoverable:** Este campo le dice a RRHH si vale la pena intentar re-enviar el evento o si es un error fatal que requiere intervención humana (como un error de sintaxis en el nombre).
 
-**Evaluación de tu progreso:** Has pasado de una documentación estática a un diseño de **Sistemas Distribuidos Resilientes**. 
+**Evaluación de tu progreso:** Has pasado de una documentación estática a un diseño de **Sistemas Distribuidos Resilientes**.

@@ -22,8 +22,8 @@ System_Boundary(erp, "ERP Core Backend") {
 
 Rel(employee, spa, "Interactúa mediante HTTPS")
 Rel(spa, api_gateway, "Llamadas REST / GraphQL", "HTTPS")
-Rel(api_gateway, iam, "Rutea Auth y valida sesión", "gRPC / HTTP interna")
-Rel(api_gateway, hr, "Rutea operaciones de dominio", "gRPC / HTTP interna")
+Rel(api_gateway, iam, "Rutea Auth y valida sesión", "HTTP interna / gRPC (a futuro) ")
+Rel(api_gateway, hr, "Rutea operaciones de dominio", "HTTP interna / gRPC (a futuro) ")
 
 Rel(hr, msg_bus, "Publica EmployeeHiredIntegrationEvent", "AMQP")
 Rel(iam, msg_bus, "Escucha y publica eventos", "AMQP")
