@@ -1,42 +1,48 @@
+# Conseptos aplicados
 
-## Transactional Outbox 
+A nivel de decicion de arquitectura.
 
-Cuando trabajas con sistemas distribuidos o microservicios, el mayor miedo es que una parte del sistema se entere de algo y la otra no.
+[transactional outbox](./deciciones%20de%20arquitectura/transactional-outbox.md)
+[text](./deciciones%20de%20arquitectura/circuit-breaker.md)
+[text](./)
+[text](./)
+[text](./)
+[text](./)
 
-El Problema: El "Teléfono Descompuesto"
+¿Qué tienen en común?
 
-Imagina que tienes una tienda online. Cuando alguien compra algo, pasan dos cosas:
+- Gestionan la complejidad de los sistemas distribuidos – Donde no hay una base de datos única ni transacciones ACID clásicas.
 
-    Guardas el pedido en tu Base de Datos.
+- Buscan la resiliencia y el desacoplamiento – Evitan que un fallo o una espera bloqueen todo el sistema.
 
-    Envías un mensaje a Logística (otro sistema) para que preparen el paquete.
+- Trabajan con eventos y asincronía – La mayoría se basa en mensajes o eventos para coordinar acciones.
 
-El riesgo: Si guardas el pedido pero el internet falla justo antes de avisar a Logística, el cliente pagó pero su paquete nunca saldrá. O al revés: avisas a Logística, pero la base de datos falla y tú no tienes registro de la venta.
+- Son patrones de nivel arquitectónico – No son simples trucos de código, sino estrategias de diseño.
 
-La Solución: La "Bandeja de Salida" (Outbox)
+Relación entre ellos
+|Patrón|Función principal|Se relaciona con...|
+|---|---|---|
+|Optimistic Locking|Evita conflictos de concurrencia en una misma entidad (sin bloqueos pesados).|Suele usarse dentro de un agregado en CQRS o Saga para asegurar que las actualizaciones no pisen cambios de otro proceso.|
+|Transactional Outbox|Garantiza que un evento se publique de forma fiable después de cambiar la base de datos.|Es la base para que Saga o CQRS puedan notificar a otros servicios de forma atómica.|
+|CQRS ligero|Separa la escritura (comandos) de la lectura (consultas) para escalar y simplificar.|A menudo se combina con Transactional Outbox para publicar eventos desde el lado de escritura.|
+|Circuit Breaker|Evita llamadas repetidas a un servicio que está fallando (protege de cascadas de fallos).|Protege a los orquestadores de Saga o a los clientes de CQRS cuando llaman a otros microservicios.|
+|Saga Pattern|Gestiona transacciones distribuidas mediante una secuencia de pasos locales + compensaciones.|Utiliza un Broker (coreografía) o un orquestador; necesita Transactional Outbox para enviar eventos fiables; y puede requerir Optimistic Locking en cada paso.|
+|Broker|Actúa como intermediario de mensajes (ej. Kafka, RabbitMQ) para comunicación asíncrona.|Es el medio de transporte para los eventos de Outbox, Saga y CQRS; también puede ayudar a implementar Circuit Breaker a nivel de red.|
 
-El patrón Transactional Outbox soluciona esto usando una técnica de "todo o nada" dentro de tu propia base de datos.
-1. El Bloque Único (La Transacción)
+Área de aplicación
 
-En lugar de intentar hablar con el mundo exterior de inmediato, haces dos cosas dentro de una misma transacción de base de datos:
+Todos se aplican en arquitecturas de microservicios, sistemas orientados a eventos (EDA) y aplicaciones cloud-native. Por ejemplo:
 
-    Insertas el pedido en la tabla de Pedidos.
+- En un e-commerce:
 
-    Insertas un mensaje (una nota) en una tabla especial llamada Outbox (Bandeja de Salida).
+- - Saga coordina el flujo “pedido → pago → inventario → envío”.
 
-Como están en la misma transacción, o se guardan las dos, o no se guarda ninguna. No hay punto medio.
-2. El Repartidor (Message Relay)
+- - Transactional Outbox asegura que al crear el pedido se publique el evento “PedidoCreado”.
 
-Ahora que el mensaje está seguro en tu base de datos, un proceso separado (como un pequeño robot) revisa la tabla Outbox constantemente.
+- - Broker (Kafka) distribuye ese evento a los demás servicios.
 
-    Si ve un mensaje nuevo, lo toma y lo envía al sistema de Logística.
+- - Optimistic Locking evita que dos procesos descuenten el mismo producto del stock.
 
-    Una vez que Logística confirma que lo recibió, el robot borra el mensaje de la tabla Outbox o lo marca como "Enviado".
+- - Circuit Breaker detiene los intentos de llamar al servicio de pago si está caído.
 
-¿Por qué es genial?
-
-    Fiabilidad: El mensaje nunca se pierde. Si el sistema de Logística está caído, el "repartidor" seguirá intentando enviar el mensaje que está guardado en la tabla Outbox hasta que lo logre.
-
-    Consistencia: Tu base de datos y el resto del mundo siempre terminan estando de acuerdo.
-
-En resumen: Es como dejar una carta en tu buzón personal (Outbox) al mismo tiempo que anotas el gasto en tu libreta. Aunque el cartero tarde en pasar, la nota ya está segura y el proceso de envío está garantizado.
+- - CQRS ligero permite tener una vista rápida del estado del pedido (lectura) separada de la lógica de negocio (escritura).

@@ -156,3 +156,5 @@ Resumen de los beneficios obtenidos con estos cambios en tu documentación:
     Tus HR Managers no chocarán al editar: Gracias al Optimistic Locking.
 
     Tu base de datos escalará mejor: Gracias a CQRS Ligero.
+
+
