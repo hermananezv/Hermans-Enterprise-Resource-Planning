@@ -21,11 +21,11 @@ Establecer estándares claros para que **toda la documentación sea consistente,
 
 ```bash
 docs/modules/[bounded-context]/
-├── README.md
-├── requirements.md
+├── README.md // punto de entrada del modulo
+├── requirements.md 
 ├── domain-model.md
-├── api-spec.md
-├── endpoints/
+├── api-spec.md // explicacion de la api
+├── endpoints //  carpeta donde viven la explicacion de cada enpoint
 │   └──[endpoint-name].md
 ├── use-cases/
 │   └── uc-[id]-[nombre].md

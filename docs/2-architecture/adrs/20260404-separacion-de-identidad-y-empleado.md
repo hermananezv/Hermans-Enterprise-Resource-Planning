@@ -1,73 +1,109 @@
-# Separación de Identidad y Empleado
+# Separación de Identidad (User) y Dominio Laboral (Employee)
 
-- Status: [ accepted ]
-- Deciders: [list everyone involved in the decision]
-- Date: [YYYY-MM-DD when the decision was last updated]
-- Tags: [space and/or comma separated list of tags]
+    Estatus: Propuesto
 
-Technical Story: [description | ticket/issue URL] <!-- optional -->
+    Fecha: 2026-04-09
 
-## Context and Problem Statement
+    Decisor: Arquitecto de Software (Tú)
 
-[Describe the context and problem statement, e.g., in free form using two to three sentences. You may want to articulate the problem in form of a question.]
+    Contexto Técnico: ERP Core / Módulos IAM y RRHH
 
-## Decision Drivers <!-- optional -->
+Contexto y Problema
 
-- [driver 1, e.g., a force, facing concern, …]
-- [driver 2, e.g., a force, facing concern, …]
-- … <!-- numbers of drivers can vary -->
+En el desarrollo del ERP, existe una confusión común entre la persona como "sujeto que accede al sistema" y la persona como "recurso laboral de la empresa".
 
-## Considered Options
+Si unificamos ambas entidades en una sola tabla/modelo:
 
-- [option 1]
-- [option 2]
-- [option 3]
-- … <!-- numbers of options can vary -->
+- El módulo de Identidad (IAM) se acopla a la lógica de negocio de RRHH (nóminas, departamentos).
 
-## Decision Outcome
+- Es difícil gestionar usuarios que no son empleados (auditores, bots) o empleados que no tienen acceso al sistema.
 
-Chosen option: "[option 1]", because [justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force force | … | comes out best (see below)].
+- La seguridad se ve comprometida al mezclar credenciales de acceso con datos sensibles de contratos en la misma base de datos.
 
-### Positive Consequences <!-- optional -->
+Decisión
 
-- [e.g., improvement of quality attribute satisfaction, follow-up decisions required, …]
-- …
+Separar formalmente las entidades en dos Bounded Contexts distintos con persistencia independiente.
+1. Definición de Identidad (Contexto IAM)
 
-### Negative Consequences <!-- optional -->
+- Entidad: User
 
-- [e.g., compromising quality attribute, follow-up decisions required, …]
-- …
+- Persistencia: Base de datos iam_db.
 
-## Pros and Cons of the Options <!-- optional -->
+- Responsabilidad: Autenticación, Roles (RBAC), Tokens JWT y MFA.
 
-### [option 1]
+- Referencia: Contendrá un campo external_id que apunta al EmployeeId (si aplica).
 
-[example | description | pointer to more information | …] <!-- optional -->
+2. Definición de Dominio Laboral (Contexto HR)
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Entidad: Employee
 
-### [option 2]
+- Persistencia: Base de datos hr_db.
 
-[example | description | pointer to more information | …] <!-- optional -->
+- Responsabilidad: Ciclo de vida laboral (contratos, salarios, vacaciones).
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Referencia: No conoce la existencia de contraseñas ni roles de sistema.
 
-### [option 3]
+3. Mecanismo de Sincronización
 
-[example | description | pointer to more information | …] <!-- optional -->
+La comunicación se realizará mediante Eventos de Dominio (Coreografía):
 
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
+- Cuando RRHH crea un Employee, publica EmployeeHired.
 
-## Links <!-- optional -->
+- El servicio IAM escucha ese evento y crea un User con permisos por defecto.
 
-- [Link type](link to adr) <!-- example: Refined by [xxx](yyyymmdd-xxx.md) -->
-- … <!-- numbers of links can vary -->
+Alternativas Consideradas
+
+- Opción 1: Entidad Única (Monolítica): Fácil de implementar al inicio (JOINs simples), pero difícil de escalar y mantener a largo plazo. Rechazada por falta de modularidad.
+
+- Opción 2: Separación Lógica (Shared Database): Usar esquemas diferentes en la misma DB. Es un paso intermedio válido, pero no permite escalado independiente de infraestructura.
+
+Consecuencias
+Positivas ✅
+
+- Seguridad (Isolation): Las brechas de seguridad en el perfil del usuario no exponen datos de nómina.
+
+- Escalabilidad: El servicio IAM puede recibir 10,000 peticiones de validación de token sin afectar el rendimiento del módulo de RRHH.
+
+- Flexibilidad: Permite que una persona tenga múltiples cuentas de usuario o que un usuario represente a una entidad no humana.
+
+Negativas ❌
+
+- Complejidad de Datos: No se pueden hacer JOINs SQL entre Usuario y Empleado. La agregación de datos debe hacerse en el API Gateway o mediante proyecciones (CQRS).
+
+- Consistencia Eventual: Hay un pequeño desfase de milisegundos desde que se crea el empleado hasta que el usuario es habilitado.
+
+- Consistencia Eventua: Tendremos que gestionar la consistencia eventual y no podremos realizar JOINs entre dominios a nivel de base de datos (se hará composición en el API Gateway o en el Frontend).
+
+```plantuml
+@startuml
+package "IAM Context" {
+  entity User {
+    + id: UUID
+    + email: String
+    + password_hash: String
+    + external_identity_id: UUID <<FK a Employee>>
+  }
+}
+
+package "HR Context" {
+  entity Employee {
+    + id: UUID
+    + salary: Decimal
+    + hire_date: Date
+    + position: String
+  }
+}
+
+Employee ..> User : "1:0..1 (vía Eventos)"
+@enduml
+```
+
+Sugerencia para tu documentación (ADR):
+
+Deberías crear un ADR titulado: "Data Sovereignty: Database per Bounded Context".
+
+* Contexto: Necesitamos escalar IAM y RRHH de forma independiente y garantizar la seguridad de los datos sensibles de nómina.
+
+* Decisión: Cada contexto tendrá su propio esquema de persistencia.
+
+* Consecuencia: Tendremos que gestionar la consistencia eventual y no podremos realizar JOINs entre dominios a nivel de base de datos (se hará composición en el API Gateway o en el Frontend).

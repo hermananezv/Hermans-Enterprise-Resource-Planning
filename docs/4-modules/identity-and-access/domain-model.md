@@ -34,11 +34,10 @@ Tienen identidad única y su estado puede cambiar con el tiempo.
     * `AccountId` (UUID): Identificador único interno en IAM.
     * `EmployeeId` (String/UUID): **[Identity Mapping]** Identificador externo proveniente del módulo Human Resources (Legajo o ID de empleado). Es inmutable y obligatorio para usuarios internos.
     * `EmailAddress` (Value Object): Correo corporativo.
-    * `Status (Enum)`: * `Scheduled_For_Activation`: El usuario ha sido aprovisionado, pero su contrato aún no inicia.
-  * **Status (Enum):** * `Scheduled_For_Activation`: El usuario ha sido aprovisionado, pero su contrato aún no inicia.
-    * `Pending_Activation`: El contrato ya inició y se ha enviado el token, pero el usuario no ha establecido su contraseña.
-    * `Active`: Usuario operando normalmente.
-    * `Suspended`: Acceso revocado.
+    * **Status (Enum):** * `Scheduled_For_Activation`: El usuario ha sido aprovisionado, pero su contrato aún no inicia.
+      * `Pending_Activation`: El contrato ya inició y se ha enviado el token, pero el usuario no ha establecido su contraseña.
+      * `Active`: Usuario operando normalmente.
+      * `Suspended`: Acceso revocado.
 
 ### Objetos de Valor (Value Objects)
 

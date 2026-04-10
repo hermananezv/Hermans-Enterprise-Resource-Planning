@@ -1,7 +1,7 @@
 # Delegación del envío de correos a un módulo dedicado (Notifications)
 
 **Fecha:** 2026-04-05
-**Estado:** Aceptado (Reemplaza decisión anterior)
+**Estado:** Aceptado 
 
 ## Contexto
 Durante el diseño de la creación de usuarios en IAM, se debatió quién debía enviar los correos transaccionales (como el token de activación). Inicialmente se pensó en acoplarlo a IAM, pero se reconsideró para favorecer la escalabilidad y reutilización en todo el ERP.

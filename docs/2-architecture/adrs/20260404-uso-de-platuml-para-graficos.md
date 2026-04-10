@@ -1,73 +1,27 @@
-# Separación de Identidad y Empleado
+# Uso de PlantUML para Diagramas de Arquitectura (C4 Model)
 
-- Status: [ accepted ]
-- Deciders: [list everyone involved in the decision]
-- Date: [YYYY-MM-DD when the decision was last updated]
-- Tags: [space and/or comma separated list of tags]
-
-Technical Story: [description | ticket/issue URL] <!-- optional -->
+- Status: accepted
+- Date: 2026-04-03
+- Tags: dev-tools, doc, architecture
 
 ## Context and Problem Statement
+[cite_start]Necesitamos una herramienta estándar para documentar la arquitectura de nuestro ERP (C4 Model, diagramas de secuencia, etc.) de manera colaborativa[cite: 64]. ¿Qué herramienta de modelado debemos utilizar para asegurar mantenibilidad y versionado?
 
-[Describe the context and problem statement, e.g., in free form using two to three sentences. You may want to articulate the problem in form of a question.]
-
-## Decision Drivers <!-- optional -->
-
-- [driver 1, e.g., a force, facing concern, …]
-- [driver 2, e.g., a force, facing concern, …]
-- … <!-- numbers of drivers can vary -->
+## Decision Drivers
+- **Trazabilidad:** Los diagramas deben poder versionarse junto con el código fuente en Git (Diagrams as Code).
+- **Mantenibilidad:** Evitar herramientas gráficas (Drag & Drop) donde un cambio menor desajusta todo el lienzo visual.
+- [cite_start]**Automatización:** Debe integrarse fácilmente en pipelines de CI/CD y en herramientas de documentación estática (como Log4brains)[cite: 65].
 
 ## Considered Options
-
-- [option 1]
-- [option 2]
-- [option 3]
-- … <!-- numbers of options can vary -->
+- [PlantUML](https://plantuml.com/): Herramienta basada en texto plano para generar diagramas UML y C4.
+- Draw.io / Lucidchart: Herramientas de diseño visual tradicionales.
+- Structurizr: Especializada en C4 Model, pero requiere infraestructura adicional.
 
 ## Decision Outcome
+Chosen option: "PlantUML".
 
-Chosen option: "[option 1]", because [justification. e.g., only option, which meets k.o. criterion decision driver | which resolves force force | … | comes out best (see below)].
-
-### Positive Consequences <!-- optional -->
-
-- [e.g., improvement of quality attribute satisfaction, follow-up decisions required, …]
-- …
-
-### Negative Consequences <!-- optional -->
-
-- [e.g., compromising quality attribute, follow-up decisions required, …]
-- …
-
-## Pros and Cons of the Options <!-- optional -->
-
-### [option 1]
-
-[example | description | pointer to more information | …] <!-- optional -->
-
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
-
-### [option 2]
-
-[example | description | pointer to more information | …] <!-- optional -->
-
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
-
-### [option 3]
-
-[example | description | pointer to more information | …] <!-- optional -->
-
-- Good, because [argument a]
-- Good, because [argument b]
-- Bad, because [argument c]
-- … <!-- numbers of pros and cons can vary -->
-
-## Links <!-- optional -->
-
-- [Link type](link to adr) <!-- example: Refined by [xxx](yyyymmdd-xxx.md) -->
-- … <!-- numbers of links can vary -->
+Justificación técnica:
+1. [cite_start]Cumple al 100% con la filosofía de **Diagramas como Código**, lo que facilita las revisiones en las Pull Requests[cite: 65].
+2. Tiene soporte nativo para la librería estándar de C4 (`C4-PlantUML`).
+3. [cite_start]Puede usarse en línea o hostearse el servidor de renderizado internamente[cite: 66].
+4. Se integra perfectamente con nuestro flujo actual de Markdown y permite su renderizado en nuestra base de conocimiento.
