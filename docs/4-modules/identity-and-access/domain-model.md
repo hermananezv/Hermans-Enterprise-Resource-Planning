@@ -31,10 +31,10 @@ Tienen identidad única y su estado puede cambiar con el tiempo.
   * Atributos: `Name`, `Description`, `Permissions` (Lista).
 * **`User` (Aggregate Root):** Representa una identidad con acceso al sistema.
   * **Atributos Clave:**
-    * `AccountId` (UUID): Identificador único interno en IAM.
-    * `EmployeeId` (String/UUID): **[Identity Mapping]** Identificador externo proveniente del módulo Human Resources (Legajo o ID de empleado). Es inmutable y obligatorio para usuarios internos.
-    * `EmailAddress` (Value Object): Correo corporativo.
-    * **Status (Enum):** * `Scheduled_For_Activation`: El usuario ha sido aprovisionado, pero su contrato aún no inicia.
+    * `UserId` (UUID): Identificador único interno en IAM.
+    * `EmployeeId` (String/UUID): **[Identity Mapping]** Referencia inmutable al EmployeeId del contexto HR para mantener el vínculo entre sistemas.
+    * **PasswordHash**: El dominio no conoce contraseñas en texto plano.
+    * **Status (Enum):** * `Scheduled_For_Activation`: El usuario ha sido aprovisionado, pero su contrato aún no inicia
       * `Pending_Activation`: El contrato ya inició y se ha enviado el token, pero el usuario no ha establecido su contraseña.
       * `Active`: Usuario operando normalmente.
       * `Suspended`: Acceso revocado.

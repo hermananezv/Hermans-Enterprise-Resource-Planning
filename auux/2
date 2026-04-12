@@ -1,0 +1,501 @@
+Has dicho
+
+explicame los conceptos basicos de DDD de manera sencilla
+Gemini ha dicho
+
+El Diseño Guiado por el Dominio (o DDD por sus siglas en inglés, Domain-Driven Design) es una forma de desarrollar software que pone el foco principal en el negocio (el "dominio") en lugar de en la tecnología.
+
+La idea principal de DDD es simple: para crear un buen software, los programadores deben entender profundamente el negocio para el que están programando, y el código debe reflejar exactamente cómo funciona ese negocio.
+
+Aquí tienes los conceptos básicos explicados de manera sencilla, usando como ejemplo una tienda online:
+1. El Dominio (Domain)
+
+El "dominio" es simplemente el mundo del negocio y los problemas que intenta resolver. En nuestro ejemplo, el dominio es el comercio electrónico (vender productos, cobrar, enviar paquetes). Todo el equipo debe centrarse en entender este dominio antes de escribir una sola línea de código.
+2. El Lenguaje Ubicuo (Ubiquitous Language)
+
+Este es el concepto más importante de DDD. Es un idioma común y compartido entre los expertos del negocio (vendedores, gerentes) y los programadores.
+
+    Por qué importa: Si el negocio usa la palabra "Cliente", los programadores no deberían llamarlo "Usuario" o "Account" en el código. Si hay una "Cesta de la compra", el código debe tener una clase llamada CestaDeLaCompra. Esto evita malentendidos y hace que el código cuente la historia del negocio.
+
+3. Contextos Delimitados (Bounded Contexts)
+
+En negocios grandes, una misma palabra puede significar cosas distintas según el departamento.
+
+    Para el departamento de Ventas, un "Producto" es algo con un título, una foto y un precio.
+
+    Para el departamento de Envíos, un "Producto" es una caja con un peso y unas dimensiones.
+
+En lugar de crear un único y gigante "Producto" que sirva para todo, DDD divide el sistema en "Contextos Delimitados" (ej. el contexto de Ventas y el contexto de Envíos). Cada contexto tiene su propio modelo y su propia definición de "Producto".
+4. Bloques de Construcción (Cómo se traduce al código)
+
+Una vez que entendemos el negocio, DDD nos da herramientas para escribir el código:
+
+    Entidades (Entities): Son cosas que tienen una identidad única y que cambia a lo largo del tiempo.
+
+        Ejemplo: Un Cliente. Aunque un cliente cambie su nombre, su dirección o su teléfono, sigue siendo la misma persona (tiene un ID único).
+
+    Objetos de Valor (Value Objects): Son cosas que no tienen identidad propia; solo nos importan sus atributos o valores. Son inmutables (no se modifican, se reemplazan).
+
+        Ejemplo: Una Dirección (Calle, Ciudad, Código Postal) o una Moneda (10 Euros). Si cambias la calle, ya no es la misma dirección, es una dirección completamente nueva.
+
+    Agregados (Aggregates): Son grupos de Entidades y Objetos de Valor que trabajan juntos y se tratan como una sola unidad de datos.
+
+        Ejemplo: Un Pedido. El pedido es el jefe (la "Raíz del Agregado") y contiene "Líneas de Pedido" y una "Dirección de Envío". Para modificar una línea de pedido, tienes que pasar obligatoriamente por el Pedido principal para que él compruebe que todas las reglas de negocio se cumplen.
+
+En resumen
+
+DDD trata de hablar el mismo idioma que el negocio, dividir el sistema en contextos lógicos para no mezclar conceptos, y usar entidades y agregados para que el código proteja las reglas de ese negocio.
+
+¿Te gustaría que profundicemos en alguno de estos conceptos (como el Lenguaje Ubicuo o los Agregados) o prefieres ver un pequeño ejemplo de cómo se vería esto en código?
+Has dicho
+
+dame un ejemplo sencillo con un crud de sabores de helados en nest
+Gemini ha dicho
+
+¡Excelente forma de aterrizarlo! Aplicar DDD en un framework como NestJS significa, sobre todo, separar responsabilidades en capas.
+
+En lugar de ponerlo todo en un solo archivo (como a veces hacemos en los típicos controladores MVC), vamos a dividir nuestro CRUD de helados en tres capas principales: Dominio (el corazón), Aplicación (los casos de uso) e Infraestructura (la web y la base de datos).
+
+Aquí tienes cómo se estructuraría un caso muy sencillo para crear y leer sabores de helados.
+1. La capa de Dominio (El corazón del negocio)
+
+Aquí no importan ni las bases de datos ni NestJS. Solo importan las reglas de los helados.
+
+sabor.entity.ts (La Entidad)
+El Sabor es el jefe. Él decide qué se puede hacer con sus datos.
+TypeScript
+
+export class Sabor {
+  constructor(
+    public readonly id: string,
+    private nombre: string,
+    private disponible: boolean = true
+  ) {}
+
+  // Regla de negocio: No podemos tener un sabor sin nombre válido
+  cambiarNombre(nuevoNombre: string) {
+    if (nuevoNombre.trim().length < 3) {
+      throw new Error('El nombre del sabor debe tener al menos 3 letras.');
+    }
+    this.nombre = nuevoNombre;
+  }
+
+  agotar() {
+    this.disponible = false;
+  }
+
+  // Getters para exponer los datos sin permitir modificarlos directamente
+  getNombre() { return this.nombre; }
+  isDisponible() { return this.disponible; }
+}
+
+sabor.repository.interface.ts (El Contrato)
+El dominio no sabe si usas MySQL, MongoDB o un archivo de texto. Solo dice: "Necesito algo que cumpla estas funciones".
+TypeScript
+
+export interface SaborRepository {
+  guardar(sabor: Sabor): Promise<void>;
+  obtenerTodos(): Promise<Sabor[]>;
+  buscarPorId(id: string): Promise<Sabor | null>;
+}
+
+// Un token para que NestJS sepa inyectar esto después
+export const SABOR_REPOSITORY = Symbol('SABOR_REPOSITORY');
+
+2. La capa de Aplicación (Los Casos de Uso)
+
+Aquí organizamos lo que el sistema puede hacer. Esta capa orquesta el dominio.
+
+crear-sabor.use-case.ts (Servicio de Aplicación)
+TypeScript
+
+import { Injectable, Inject } from '@nestjs/common';
+import { Sabor } from '../dominio/sabor.entity';
+import { SaborRepository, SABOR_REPOSITORY } from '../dominio/sabor.repository.interface';
+
+@Injectable()
+export class CrearSaborUseCase {
+  // Inyectamos el contrato, no la base de datos real
+  constructor(
+    @Inject(SABOR_REPOSITORY) private readonly repository: SaborRepository
+  ) {}
+
+  async ejecutar(id: string, nombre: string): Promise<Sabor> {
+    // 1. Creamos la entidad del dominio
+    const nuevoSabor = new Sabor(id, nombre);
+    
+    // 2. Comprobamos las reglas de negocio (si las hay)
+    nuevoSabor.cambiarNombre(nombre); // Esto lanzará error si el nombre es muy corto
+    
+    // 3. Guardamos a través del contrato
+    await this.repository.guardar(nuevoSabor);
+    
+    return nuevoSabor;
+  }
+}
+
+3. La capa de Infraestructura (El mundo exterior)
+
+Aquí es donde entra NestJS, las peticiones HTTP (Express/Fastify) y la base de datos real.
+
+sabor.controller.ts (El Controlador de NestJS)
+El controlador solo recibe la petición de internet y se la pasa al caso de uso. No tiene lógica de negocio.
+TypeScript
+
+import { Controller, Post, Body, Get } from '@nestjs/common';
+import { CrearSaborUseCase } from '../aplicacion/crear-sabor.use-case';
+
+@Controller('sabores')
+export class SaborController {
+  constructor(private readonly crearSaborUseCase: CrearSaborUseCase) {}
+
+  @Post()
+  async crear(@Body() body: { id: string; nombre: string }) {
+    // Llamamos al caso de uso
+    const sabor = await this.crearSaborUseCase.ejecutar(body.id, body.nombre);
+    
+    // Mapeamos la respuesta para ocultar datos internos si fuera necesario
+    return {
+      id: sabor.id,
+      nombre: sabor.getNombre(),
+      disponible: sabor.isDisponible()
+    };
+  }
+}
+
+en-memoria-sabor.repository.ts (La implementación de la BD)
+Esta es la implementación real del contrato que creamos en el Dominio.
+TypeScript
+
+import { Injectable } from '@nestjs/common';
+import { Sabor } from '../dominio/sabor.entity';
+import { SaborRepository } from '../dominio/sabor.repository.interface';
+
+@Injectable()
+export class EnMemoriaSaborRepository implements SaborRepository {
+  private baseDeDatos: Sabor[] = [];
+
+  async guardar(sabor: Sabor): Promise<void> {
+    this.baseDeDatos.push(sabor);
+  }
+
+  async obtenerTodos(): Promise<Sabor[]> {
+    return this.baseDeDatos;
+  }
+
+  async buscarPorId(id: string): Promise<Sabor | null> {
+    return this.baseDeDatos.find(s => s.id === id) || null;
+  }
+}
+
+4. El módulo (Pegándolo todo)
+
+En NestJS, usamos los módulos para decirle al sistema qué implementación usar para el contrato.
+
+sabor.module.ts
+TypeScript
+
+import { Module } from '@nestjs/common';
+import { SaborController } from './infraestructura/sabor.controller';
+import { CrearSaborUseCase } from './aplicacion/crear-sabor.use-case';
+import { EnMemoriaSaborRepository } from './infraestructura/en-memoria-sabor.repository';
+import { SABOR_REPOSITORY } from './dominio/sabor.repository.interface';
+
+@Module({
+  controllers: [SaborController],
+  providers: [
+    CrearSaborUseCase,
+    {
+      // Cuando alguien pida el SABOR_REPOSITORY...
+      provide: SABOR_REPOSITORY,
+      // ...entégale la base de datos en memoria (¡o cámbialo por TypeORM en el futuro!)
+      useClass: EnMemoriaSaborRepository, 
+    },
+  ],
+})
+export class SaborModule {}
+
+¿Por qué hacer tanto archivo para un simple CRUD?
+
+En un proyecto pequeño, parece mucho código. Pero en DDD la ventaja es inmensa: si mañana decides cambiar tu base de datos de MongoDB a PostgreSQL, el Dominio y los Casos de Uso no cambian absolutamente nada. Solo tienes que crear un nuevo archivo de repositorio en la capa de Infraestructura. Tu negocio está 100% protegido de los cambios tecnológicos.
+
+¿Te gustaría que veamos cómo añadir un Objeto de Valor (Value Object) a este mismo ejemplo, como por ejemplo un objeto para los Ingredientes del helado?
+Has dicho
+
+porque divides la aplicacion en 3 capas? es parte de DDD ?
+Gemini ha dicho
+
+¡Excelente pregunta! Es una duda súper común cuando se empieza a estudiar este tema.
+
+Para ir directo al grano: No, la división en capas no es DDD propiamente dicho, pero es la herramienta que usamos para que DDD pueda existir.
+
+Te lo explico separando los dos conceptos:
+1. DDD es la "Filosofía"
+
+Como vimos antes, DDD (Diseño Guiado por el Dominio) trata sobre entender el negocio y crear un modelo (entidades, agregados, objetos de valor) que refleje exactamente cómo funciona ese negocio. DDD te dice qué tienes que programar y cómo debes llamarlo.
+2. Las Capas son la "Arquitectura"
+
+Para que ese modelo de negocio (el Dominio) sobreviva en el código sin convertirse en un desastre, necesitamos protegerlo. Aquí es donde entran patrones estructurales como la Arquitectura Hexagonal, la Arquitectura Limpia (Clean Architecture) o la Arquitectura de Cebolla (Onion Architecture).
+
+Estas arquitecturas nos dicen dónde poner el código.
+¿Por qué se necesitan mutuamente?
+
+El mayor enemigo de DDD es la "contaminación" del código.
+
+Imagina que en tu archivo de la entidad Sabor pones un decorador de TypeORM (@Column()) o haces un import de NestJS. En ese momento, las reglas de tu negocio de helados quedan atadas a una tecnología específica. Si mañana TypeORM se vuelve obsoleto o cambias NestJS por Express, tendrás que reescribir las reglas de tu negocio.
+
+Para evitar eso, dividimos la aplicación en capas con una regla de oro: la dependencia siempre va hacia adentro.
+
+    El Dominio (El núcleo): Es código puro (solo TypeScript). No sabe nada de bases de datos, ni de internet, ni de NestJS. Es el rey y está totalmente aislado.
+
+    La Aplicación (El orquestador): Conoce al Dominio y lo usa para ejecutar casos de uso, pero sigue sin saber los detalles técnicos de cómo se guarda la información.
+
+    La Infraestructura (El exterior): Conoce a todas las demás capas. Aquí viven NestJS, los controladores HTTP y las consultas SQL. Es la capa "sucia" que se encarga de hablar con el mundo real y traducir todo para que el Dominio lo entienda.
+
+Dato curioso: Cuando Eric Evans escribió el libro original de DDD en 2003, él sí propuso una "Arquitectura en Capas" clásica (Interfaz de Usuario, Aplicación, Dominio e Infraestructura). Sin embargo, con los años, la comunidad descubrió que arquitecturas como la Hexagonal aíslan y protegen el Dominio mucho mejor, por lo que hoy en día casi siempre verás DDD implementado con este tipo de arquitecturas de 3 o 4 capas concéntricas.
+
+Sabiendo que las capas son solo el "guardaespaldas" del Dominio, ¿te gustaría que veamos el ejemplo del Objeto de Valor (Value Object) para los ingredientes del helado que comentamos antes, o prefieres indagar un poco más en esto de la arquitectura?
+Has dicho
+
+en el ejemplo hay algun agregate?
+Gemini ha dicho
+
+¡Sí! En el ejemplo que vimos, la clase Sabor actúa como el Agregado (y más específicamente, como la Raíz del Agregado o Aggregate Root).
+
+Sin embargo, es un agregado muy simple (lo que se llama un "agregado de una sola entidad"), por lo que no se aprecia todo el poder de este concepto.
+
+Aquí te explico por qué Sabor es un agregado y cómo se vería si lo hacemos un poco más complejo:
+¿Por qué Sabor ya era un Agregado en el ejemplo?
+
+En DDD, sabemos que algo es un Agregado por tres reglas principales que Sabor ya cumplía:
+
+    Tiene su propio Repositorio: En DDD, solo las Raíces de los Agregados tienen repositorios. Como creamos un SaborRepository, automáticamente convertimos a Sabor en la raíz de su propio agregado.
+
+    Es la unidad de guardado: Cuando guardamos o recuperamos de la base de datos, lo hacemos con el Sabor completo, no por pedazos.
+
+    Protege sus reglas (Invariantes): El método cambiarNombre no permite nombres de menos de 3 letras. El agregado es el "guardián" de que los datos siempre sean válidos.
+
+El verdadero poder del Agregado: Controlar a otros
+
+Para entender de verdad el concepto, imagina que nuestro helado necesita una lista de Ingredientes y tenemos una regla de negocio: "Un sabor de helado no puede tener más de 3 ingredientes principales".
+
+El Ingrediente sería un Objeto de Valor (Value Object) porque no nos importa su ID, solo su nombre y cantidad (ej. "Vainilla", "200g").
+
+Aquí está la regla de oro de los Agregados: ¡No creamos un IngredienteRepository! Si alguien quiere añadir un ingrediente, tiene que pedírselo obligatoriamente al jefe (la Raíz del Agregado, que es Sabor).
+
+Así se vería en código:
+TypeScript
+
+// 1. El Objeto de Valor (Value Object)
+export class Ingrediente {
+  constructor(
+    public readonly nombre: string,
+    public readonly gramos: number
+  ) {}
+}
+
+// 2. El Agregado (Aggregate Root)
+export class Sabor {
+  // Ahora el sabor guarda una lista de sus ingredientes
+  private ingredientes: Ingrediente[] = [];
+
+  constructor(
+    public readonly id: string,
+    private nombre: string,
+    private disponible: boolean = true
+  ) {}
+
+  // EL AGREGADO PROTEGE LAS REGLAS DE TODO EL GRUPO
+  agregarIngrediente(nuevoIngrediente: Ingrediente) {
+    if (this.ingredientes.length >= 3) {
+      throw new Error('Un sabor no puede tener más de 3 ingredientes principales.');
+    }
+    
+    // Si cumple la regla, lo añadimos
+    this.ingredientes.push(nuevoIngrediente);
+  }
+
+  getIngredientes(): Ingrediente[] {
+    // Devolvemos una copia para que nadie pueda modificar la lista desde fuera
+    return [...this.ingredientes]; 
+  }
+}
+
+¿Qué ganamos con esto?
+
+Si alguien desde la capa de Aplicación (un Caso de Uso) intenta añadir 4 ingredientes, la clase Sabor lanzará un error y lo impedirá. El Agregado actúa como una frontera protectora. Cuando guardes el Sabor usando su repositorio, guardarás el Sabor junto con todos sus ingredientes en un solo movimiento.
+
+¿Te gustaría ver cómo se modificaría el Caso de Uso o el Repositorio para manejar este nuevo Agregado con sus ingredientes incluidos?
+Has dicho
+
+me cuenta diferenciar entre agregado value object y entity
+Gemini ha dicho
+
+¡Es totalmente normal que te cueste! Te aseguro que es la duda más común cuando todos empezamos a aprender DDD. La línea parece muy fina al principio, pero hay un par de "trucos mentales" infalibles para diferenciarlos.
+
+Para entenderlo, olvídate del código por un momento. Vamos a verlo con ejemplos de la vida real.
+1. Entity (Entidad): "Soy quien soy, no cómo me veo"
+
+Una Entidad es algo que tiene una identidad única que lo acompaña toda su vida, sin importar cuánto cambie por fuera.
+
+    La prueba de fuego: ¿Tiene un ID, un DNI, una matrícula o un número de pasaporte? Si la respuesta es sí, es una Entidad.
+
+    Ejemplo en la vida real: TÚ. Eres una entidad. Tienes un número de identidad. Si mañana te cambias el nombre, te tiñes el pelo de verde y te mudas de país, tus datos habrán cambiado, pero sigues siendo tú.
+
+    En nuestro código de helados: El Sabor. Tiene un ID único (ej: sabor-123). Si el sabor "Fresa" mañana pasa a llamarse "Fresa Intensa" y cambiamos su color, sigue siendo el mismo registro en nuestro sistema.
+
+2. Value Object (Objeto de Valor): "Soy lo que valgo"
+
+Un Objeto de Valor es algo que NO tiene identidad. Solo nos importan sus propiedades, sus datos. Y la regla de oro: son inmutables (no se modifican, si quieres cambiarlo, lo tiras y creas uno nuevo).
+
+    La prueba de fuego: Si dos cosas tienen exactamente los mismos datos, ¿da igual cuál use? Si la respuesta es sí, es un Objeto de Valor.
+
+    Ejemplo en la vida real: Un billete de 10 euros. Si yo te presto un billete de 10€, cuando me lo devuelvas me da exactamente igual si me das el mismo papel físico u otro billete distinto. Lo que me importa es su valor (10€).
+
+    Otro ejemplo: Una coordenada GPS (Latitud: 40, Longitud: -3). Si quieres moverte un metro a la derecha, no "editas" la coordenada; pasas a estar en una coordenada completamente nueva.
+
+    En nuestro código de helados: El Precio (Cantidad: 3, Moneda: EUR) o el Color (Rojo, Azul).
+
+3. Aggregate (Agregado): "El jefe del equipo"
+
+Aquí es donde la gente se confunde más, porque el Agregado no es una cosa distinta a las Entidades o los Value Objects. Un Agregado es simplemente una agrupación de Entidades y Objetos de Valor que trabajan en equipo.
+
+Ese equipo tiene un "Jefe", que es una Entidad especial llamada Raíz del Agregado (Aggregate Root).
+
+    La prueba de fuego: ¿Esta cosa controla las reglas de otras cosas más pequeñas que están dentro de ella? Si la respuesta es sí, es un Agregado.
+
+    Ejemplo en la vida real: Un Coche. El coche es la Entidad principal (tiene su matrícula). Pero el coche tiene dentro Ruedas (Entidades pequeñas) y Color (Objeto de valor). Tú no vas por la calle y dejas una rueda suelta aparcada; todo se mueve junto. Y si quieres cambiar una rueda, el Coche es el jefe que dice "Oye, máximo 4 ruedas, no me pongas 5".
+
+    En nuestro código de helados: El Pedido de un cliente. El Pedido es el jefe (Agregado). Dentro tiene Líneas de pedido (ej: 2 helados de fresa) y una Dirección de entrega (Value Object). Si quieres añadir otro helado, se lo pides al Pedido, y él decide si te deja o si ya superaste el límite de compra.
+
+Resumen rápido para tu cerebro:
+
+    Entity: Tiene ID. Puede cambiar. (Ej: Un usuario, un coche).
+
+    Value Object: No tiene ID. No cambia, se reemplaza. (Ej: Una dirección, un importe de dinero).
+
+    Aggregate: Es una Entidad "jefe" que agrupa a otras Entidades y Value Objects dentro de ella para proteger las reglas de negocio. (Ej: Un carrito de compras con sus productos).
+
+¿Te gustaría que hagamos un pequeño juego donde te digo tres conceptos de la heladería y tú intentas adivinar si son Entidad, Value Object o Agregado, o prefieres ver cómo se programa un Objeto de Valor de forma segura?
+Has dicho
+
+el contrato tambien es un concepto de DDD ?
+Gemini ha dicho
+
+¡Muy buena observación! Has detectado un detalle clave.
+
+La respuesta corta es: No, la palabra "Contrato" no es un concepto o patrón oficial de DDD. Cuando usé la palabra "contrato" en el ejemplo (SaborRepository), estaba usando un término general de programación para explicar el verdadero concepto de DDD que estábamos aplicando: El Repositorio (Repository).
+
+Te explico cómo encajan las piezas:
+1. El concepto de DDD: El Repositorio
+
+En el libro original de DDD, el Repositorio sí es un patrón oficial.
+DDD nos dice: "El Dominio necesita una forma de guardar y recuperar los Agregados como si fueran una colección en memoria, sin preocuparse de la base de datos".
+
+Ese es el concepto puro. DDD te dice que necesitas un "Repositorio", pero no te dice exactamente cómo programarlo en TypeScript o Java.
+2. La herramienta de programación: La Interfaz (El "Contrato")
+
+Para hacer realidad ese Repositorio sin manchar nuestro código de Dominio con cosas de SQL o MongoDB, usamos una herramienta básica de la programación orientada a objetos: las interfaces.
+
+Una interfaz es simplemente un "contrato". Es un papel que dice: "Quien quiera ser mi base de datos, tiene que cumplir estas normas (tener un método guardar, un método buscar, etc.)".
+3. El concepto de Arquitectura: Puertos y Adaptadores
+
+Si investigas un poco más sobre cómo estructurar proyectos (con la famosa Arquitectura Hexagonal), verás que a estos contratos/interfaces se les llama Puertos (Ports).
+
+El Dominio crea un "Puerto" (el contrato), y luego la capa de Infraestructura enchufa un "Adaptador" (la base de datos real) en ese puerto.
+En resumen:
+
+    DDD exige que exista un Repositorio para sacar de en medio la complejidad de la base de datos.
+
+    La Programación nos da las Interfaces (contratos) para poder definir ese Repositorio sin atarnos a una tecnología.
+
+    La Arquitectura Hexagonal llama a esto Puertos (la interfaz en el dominio) y Adaptadores (la implementación en la infraestructura).
+
+Es súper normal confundir qué pertenece a DDD y qué pertenece a la arquitectura, porque hoy en día casi siempre se usan juntos. DDD te da los ladrillos (Entidades, Value Objects, Agregados, Repositorios) y la Arquitectura Hexagonal te da el plano de la casa para poner esos ladrillos en su sitio.
+
+¿Te va cuadrando mejor cómo encajan todas estas piezas? Si quieres, podemos repasar cómo se comunicaría la capa web (el controlador) con todo esto usando otro concepto de DDD llamado Servicios de Aplicación (Casos de Uso).
+Has dicho
+
+los dto y los vo son equivalentes?
+Gemini ha dicho
+
+¡Para nada! Y me alegra muchísimo que hagas esta pregunta, porque es la confusión número uno cuando se empieza a mezclar arquitectura con DDD.
+
+Como ambos objetos suelen ser pequeños y a veces agrupan datos similares, es súper fácil pensar que son lo mismo, pero su propósito y sus reglas son completamente opuestos.
+
+Para resumirlo en una frase: El DTO es "tonto" y solo transporta datos; el Value Object (VO) es "inteligente" y contiene reglas de negocio.
+
+Aquí tienes la diferencia detallada:
+1. DTO (Data Transfer Object): "El Mensajero"
+
+El DTO es un concepto de arquitectura (no de DDD). Su único trabajo es llevar datos de un lado a otro, normalmente entre los límites de tu aplicación (por ejemplo, desde la petición HTTP en el Controlador hasta el Caso de Uso).
+
+    Sin comportamiento: No tiene lógica, no tiene reglas, no valida nada complejo. Es solo un saco de datos (variables públicas o getters/setters).
+
+    Propósito: Evitar enviar 20 parámetros sueltos en una función, o definir exactamente qué forma tiene el JSON que te envía el cliente.
+
+    Analogía: Es como una caja de cartón de Amazon. No le importa lo que lleva dentro, su único trabajo es que el paquete viaje del almacén a tu casa.
+
+2. VO (Value Object): "El Experto"
+
+El VO es el corazón de DDD. Es un objeto que representa un concepto real de tu negocio (como un Precio, un Email, o una Dirección).
+
+    Con comportamiento: Es muy estricto. Se valida a sí mismo en el momento en que lo creas. Si intentas crear un VO inválido (ej. un precio negativo), explota y lanza un error. Nunca puede existir en un estado inválido.
+
+    Inmutable: Una vez creado, no puedes modificar sus datos. Si el valor cambia, creas un VO completamente nuevo.
+
+    Analogía: Es como un billete de 10 euros. Tiene reglas estrictas (marcas de agua, tamaño) y un valor exacto. Si lo rompes o lo pintas, pierde su validez.
+
+Veámoslo claro con código
+
+Imagina que queremos crear un nuevo sabor de helado con su precio.
+
+El DTO (En la capa de Infraestructura/Controlador):
+TypeScript
+
+// Es solo una estructura plana. Viene del JSON del usuario ({ "precio": -5 }).
+// A este objeto no le importa si el precio es negativo o absurdo.
+export class CrearSaborDto {
+  nombre: string;
+  precio: number;
+  moneda: string;
+}
+
+El Value Object (En la capa de Dominio):
+TypeScript
+
+// Es un concepto del negocio. Protege sus propias reglas.
+export class Precio {
+  constructor(
+    private readonly cantidad: number,
+    private readonly moneda: string
+  ) {
+    // EL VO SE VALIDA A SÍ MISMO
+    if (cantidad < 0) {
+      throw new Error('Un helado no puede tener precio negativo.');
+    }
+    if (!['EUR', 'USD'].includes(moneda)) {
+      throw new Error('Moneda no aceptada.');
+    }
+  }
+
+  // Comportamiento de negocio: sumar dos precios devuelve un NUEVO Precio (Inmutabilidad)
+  sumar(otroPrecio: Precio): Precio {
+    if (this.moneda !== otroPrecio.moneda) throw new Error('Monedas distintas');
+    return new Precio(this.cantidad + otroPrecio.cantidad, this.moneda);
+  }
+}
+
+¿Cómo trabajan juntos?
+
+Normalmente, hacen equipo.
+
+    El usuario envía un JSON a tu API.
+
+    Tu Controlador recibe ese JSON y lo mete en un DTO (la caja de cartón).
+
+    El Controlador le pasa ese DTO al Caso de Uso.
+
+    El Caso de Uso abre la caja (el DTO), saca los datos en bruto y los usa para construir Value Objects y Entidades. Si los datos del DTO eran basura (ej. precio negativo), el Value Object lanzará un error y detendrá el proceso.
+
+¿Te gustaría ver cómo se vería ese "paso a paso" en el Caso de Uso (recibiendo el DTO y convirtiéndolo en VOs), o tienes alguna otra duda sobre estos conceptos?

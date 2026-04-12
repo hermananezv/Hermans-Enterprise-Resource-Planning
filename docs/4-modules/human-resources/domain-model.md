@@ -21,7 +21,7 @@ Términos de negocio estrictos para este contexto:
 
 ### Agregados y Raíces de Agregado (Aggregate Roots)
 
-* **`Employee` (Aggregate Root):** Es la entidad central. Toda modificación sobre el estado laboral de la persona, sus datos personales o la firma de un nuevo contrato debe pasar por aquí para garantizar la coherencia legal.
+* **`Employe` (Aggregate Root):** Es la entidad central. Toda modificación sobre el estado laboral de la persona, sus datos personales o la firma de un nuevo contrato debe pasar por aquí para garantizar la coherencia legal.
   * *Manejo de Concurrencia (Optimistic Locking):* Posee un atributo `Version` (entero o UUID temporal). Al intentar guardar cambios concurrentes, si la versión en la base de datos difiere de la cargada en memoria, se lanza una `OptimisticConcurrencyException` para prevenir superposición de contratos o estados inconsistentes.
 * **`Department` (Aggregate Root):** Gestiona su propio ciclo de vida y presupuesto. Un departamento existe independientemente de si tiene empleados asignados o no en un momento dado.
 
@@ -35,9 +35,20 @@ Términos de negocio estrictos para este contexto:
 
 Al ser inmutables, nos evitan errores críticos como cruzar monedas o procesar sueldos negativos.
 
-* **`Money` (Dinero):** Encapsula el `Amount` (Cantidad) y la `Currency` (Moneda, ej. USD, EUR). Previene operaciones no válidas (ej. sumar USD con EUR directamente).
+* **`Salary` (Dinero):** Encapsula el `Amount` (Cantidad) y la `Currency` (Moneda, ej. USD, EUR). Previene operaciones no válidas (ej. sumar USD con EUR directamente).
 * **`TaxId` (Identificador Fiscal):** Encapsula la validación del número de identidad nacional (DNI, SSN, NIF).
 * **`DateRange` (Rango de Fechas):** Define el inicio y fin de un contrato o de unas vacaciones. Garantiza que la fecha de fin nunca sea anterior a la fecha de inicio.
+* EmployeeId: UUID inmutable que identifica al trabajador en todo el ERP.
+* PersonalEmail: Correo personal para las notificaciones de onboarding.
+---
+
+Servicios de Dominio:
+
+* HiringService: Coordina las reglas de negocio complejas que no pertenecen solo a la entidad Employee (ej. verificar si hay presupuesto antes de contratar).
+
+Eventos de Dominio:
+
+* EmployeeCreated: Evento interno que dispara el EmployeeHiredIntegrationEvent hacia el bus de mensajes.
 
 ---
 
